@@ -3,7 +3,7 @@ name: Salesforce Validation
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   validate:
@@ -50,7 +50,7 @@ jobs:
 
           sf sgd source delta \
             --to HEAD \
-            --from origin/main \
+            --from origin/master \
             --output changed-sources \
             --generate-delta \
             --source force-app
