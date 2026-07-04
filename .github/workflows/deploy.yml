@@ -1,0 +1,72 @@
+name: Salesforce Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Salesforce CLI
+        run: npm install --global @salesforce/cli
+
+      - name: Verify Salesforce CLI
+        run: sf version
+
+      - name: Install Git Delta Plugin
+        run: |
+          echo y | sf plugins install sfdx-git-delta
+
+      - name: Create JWT Key File
+        run: |
+          echo "${{ secrets.SF_JWT_KEY }}" > server.key
+
+      - name: Authenticate to Salesforce
+        run: |
+          sf org login jwt \
+            --client-id ${{ secrets.SF_CONSUMER_KEY }} \
+            --jwt-key-file server.key \
+            --username ${{ secrets.SF_USERNAME }} \
+            --instance-url ${{ secrets.SF_INSTANCE_URL }} \
+            --alias TargetOrg
+
+      - name: Verify Authentication
+        run: |
+          sf org display --target-org TargetOrg
+
+      - name: Generate Delta Package
+        run: |
+          mkdir changed-sources
+
+          sf sgd source delta \
+            --to HEAD \
+            --from HEAD~1 \
+            --output changed-sources \
+            --generate-delta \
+            --source force-app
+
+      - name: Display Delta Contents
+        run: |
+          ls -R changed-sources
+
+      - name: Deploy Delta Package
+        run: |
+          sf project deploy start \
+            --source-dir changed-sources/force-app \
+            --target-org TargetOrg \
+            --test-level RunLocalTests \
+            --wait 60
+
+      - name: Delete JWT Key
+        if: always()
+        run: rm server.key
