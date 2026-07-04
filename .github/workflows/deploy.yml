@@ -62,7 +62,7 @@ jobs:
       - name: Deploy Delta Package
         run: |
           sf project deploy start \
-            --source-dir changed-sources/force-app \
+            --manifest changed-sources/package/package.xml \
             --target-org TargetOrg \
             --test-level RunLocalTests \
             --wait 60
