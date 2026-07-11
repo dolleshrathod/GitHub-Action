@@ -59,14 +59,28 @@ jobs:
 
       - name: Validate Deployment
         run: |
-          if [ -d changed-sources/force-app ]; then
+          if [ ! -d changed-sources/force-app ]; then
+            echo "No metadata changes detected under force-app — skipping validation."
+            exit 0
+          fi
+
+          TEST_CLASSES=$(find force-app -type f -name "*Test.cls" -exec basename {} .cls \; | paste -sd ',' -)
+
+          if [ -z "$TEST_CLASSES" ]; then
+            echo "No Apex test classes found in repo — validating without running tests."
             sf project deploy validate \
               --source-dir changed-sources/force-app \
               --target-org TargetOrg \
-              --test-level RunLocalTests \
+              --test-level NoTestRun \
               --wait 60
           else
-            echo "No metadata changes detected under force-app — skipping validation."
+            echo "Running tests: $TEST_CLASSES"
+            sf project deploy validate \
+              --source-dir changed-sources/force-app \
+              --target-org TargetOrg \
+              --test-level RunSpecifiedTests \
+              --tests "$TEST_CLASSES" \
+              --wait 60
           fi
 
       - name: Delete JWT Key
