@@ -1,5 +1,6 @@
 public class FutureDemo {
-	
+
+
     public static void normalMethod(){
         System.debug('Hello I am Normal Method');
         futureMethod();
