@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+    paths:
+      - 'force-app/**'
 
 jobs:
   deploy:
@@ -61,11 +63,15 @@ jobs:
 
       - name: Deploy Delta Package
         run: |
-          sf project deploy start \
-            --manifest changed-sources/package/package.xml \
-            --target-org TargetOrg \
-            --test-level RunLocalTests \
-            --wait 60
+          if grep -q "<types>" changed-sources/package/package.xml; then
+            sf project deploy start \
+              --manifest changed-sources/package/package.xml \
+              --target-org TargetOrg \
+              --test-level RunLocalTests \
+              --wait 60
+          else
+            echo "No metadata changes detected under force-app — skipping deploy."
+          fi
 
       - name: Delete JWT Key
         if: always()

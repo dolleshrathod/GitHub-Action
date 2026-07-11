@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - master
+    paths:
+      - 'force-app/**'
 
 jobs:
   validate:
@@ -57,11 +59,15 @@ jobs:
 
       - name: Validate Deployment
         run: |
-          sf project deploy validate \
-            --source-dir changed-sources/force-app \
-            --target-org TargetOrg \
-            --test-level RunLocalTests \
-            --wait 60
+          if [ -d changed-sources/force-app ]; then
+            sf project deploy validate \
+              --source-dir changed-sources/force-app \
+              --target-org TargetOrg \
+              --test-level RunLocalTests \
+              --wait 60
+          else
+            echo "No metadata changes detected under force-app — skipping validation."
+          fi
 
       - name: Delete JWT Key
         if: always()
